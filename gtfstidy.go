@@ -550,7 +550,7 @@ func main() {
 
 		if *useStopReclusterer {
 			minzers = append(minzers, processors.StopReclusterer{
-				DistThreshold:     75,
+				DistThreshold:     120,
 				NameSimiThreshold: 0.55,
 				GridCellSize:      10000,
 			})

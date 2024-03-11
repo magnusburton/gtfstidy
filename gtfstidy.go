@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"github.com/patrickbr/gtfsparser"
 	"github.com/patrickbr/gtfsparser/gtfs"
-	"github.com/patrickbr/gtfstidy/processors"
+	"github.com/magnusburton/gtfstidy/processors"
 	"github.com/patrickbr/gtfswriter"
 	"github.com/paulmach/go.geojson"
 	flag "github.com/spf13/pflag"

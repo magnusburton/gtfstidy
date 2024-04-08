@@ -135,6 +135,8 @@ func main() {
 
 	nonOverlappingServices := flag.BoolP("non-overlapping-services", "", false, "create non-overlapping services")
 
+	idPrefix := flag.StringP("prefix", "", "", "prefix used before all ids")
+
 	keepIds := flag.BoolP("keep-ids", "", false, "preserve station, fare, shape, route, trip, level, agency, pathway, and service IDs")
 	keepStationIds := flag.BoolP("keep-station-ids", "", false, "preserve station IDs")
 	keepBlockIds := flag.BoolP("keep-block-ids", "", false, "preserve block IDs")
@@ -460,6 +462,13 @@ func main() {
 		}
 		if len(gtfsPaths) > 1 {
 			prefix := strconv.FormatInt(int64(i), 10) + "#"
+			if len(*idPrefix) > 0 {
+				prefix = *idPrefix + prefix
+			}
+			prefixes[prefix] = true
+			e = feed.PrefixParse(gtfsPath, prefix)
+		} else if len(*idPrefix) > 0 {
+			prefix := *idPrefix
 			prefixes[prefix] = true
 			e = feed.PrefixParse(gtfsPath, prefix)
 		} else {
@@ -624,7 +633,7 @@ func main() {
 		}
 
 		if *nonOverlappingServices {
-			minzers = append(minzers, processors.ServiceNonOverlapper{DayNames : []string{"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"}, YearWeekName : "WW"})
+			minzers = append(minzers, processors.ServiceNonOverlapper{DayNames: []string{"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"}, YearWeekName: "WW"})
 		}
 
 		if *useServiceMinimizer {
@@ -644,9 +653,9 @@ func main() {
 		}
 
 		if *useIDMinimizerNum {
-			minzers = append(minzers, processors.IDMinimizer{Base: 10, KeepStations: *keepStationIds, KeepBlocks: *keepBlockIds, KeepFares: *keepFareIds, KeepShapes: *keepShapeIds, KeepRoutes: *keepRouteIds, KeepTrips: *keepTripIds, KeepLevels: *keepLevelIds, KeepServices: *keepServiceIds, KeepAgencies: *keepAgencyIds, KeepPathways: *keepPathwayIds, KeepAttributions: *keepAttributionIds})
+			minzers = append(minzers, processors.IDMinimizer{Prefix: *idPrefix, Base: 10, KeepStations: *keepStationIds, KeepBlocks: *keepBlockIds, KeepFares: *keepFareIds, KeepShapes: *keepShapeIds, KeepRoutes: *keepRouteIds, KeepTrips: *keepTripIds, KeepLevels: *keepLevelIds, KeepServices: *keepServiceIds, KeepAgencies: *keepAgencyIds, KeepPathways: *keepPathwayIds, KeepAttributions: *keepAttributionIds})
 		} else if *useIDMinimizerChar {
-			minzers = append(minzers, processors.IDMinimizer{Base: 36, KeepStations: *keepStationIds, KeepBlocks: *keepBlockIds, KeepFares: *keepFareIds, KeepShapes: *keepShapeIds, KeepRoutes: *keepRouteIds, KeepTrips: *keepTripIds, KeepLevels: *keepLevelIds, KeepServices: *keepServiceIds, KeepAgencies: *keepAgencyIds, KeepPathways: *keepPathwayIds, KeepAttributions: *keepAttributionIds})
+			minzers = append(minzers, processors.IDMinimizer{Prefix: *idPrefix, Base: 36, KeepStations: *keepStationIds, KeepBlocks: *keepBlockIds, KeepFares: *keepFareIds, KeepShapes: *keepShapeIds, KeepRoutes: *keepRouteIds, KeepTrips: *keepTripIds, KeepLevels: *keepLevelIds, KeepServices: *keepServiceIds, KeepAgencies: *keepAgencyIds, KeepPathways: *keepPathwayIds, KeepAttributions: *keepAttributionIds})
 		}
 
 		// do processing

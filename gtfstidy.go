@@ -135,6 +135,7 @@ func main() {
 
 	nonOverlappingServices := flag.BoolP("non-overlapping-services", "", false, "create non-overlapping services")
 	groupAdjEquStops := flag.BoolP("group-adj-stop-times", "", false, "group adjacent stop times with eqv. stops")
+	groupAdjEquStopsAggressive := flag.BoolP("group-adj-stop-times-aggressive", "", false, "aggressivly group intra-station stops")
 	removeFillers := flag.BoolP("remove-fillers", "", false, "remove fill values (., .., .., -, ?) from some optional fields")
 
 	idPrefix := flag.StringP("prefix", "", "", "prefix used before all ids")
@@ -151,7 +152,8 @@ func main() {
 	keepAttributionIds := flag.BoolP("keep-attribution-ids", "", false, "preserve attribution IDs")
 	keepServiceIds := flag.BoolP("keep-service-ids", "", false, "preserve service IDs in calendar.txt and calendar_dates.txt")
 	keepAgencyIds := flag.BoolP("keep-agency-ids", "", false, "preserve agency IDs")
-	useOrphanDeleter := flag.BoolP("delete-orphans", "O", false, "remove entities that are not referenced anywhere")
+	orphanDeleters := flag.StringSliceP("delete-orphans", "O", []string{}, "remove entities that are not referenced anywhere\ncomma-separated list of supported files:\nall,agency,routes,services,shapes,stops,transfers,trips")
+	flag.Lookup("delete-orphans").NoOptDefVal = "all"
 	useShapeMinimizer := flag.BoolP("min-shapes", "s", false, "minimize shapes (using Douglas-Peucker)")
 	useShapeRemeasurer := flag.BoolP("remeasure-shapes", "m", false, "remeasure shapes (filling measurement-holes)")
 	useStopTimeRemeasurer := flag.BoolP("remeasure-stop-times", "r", false, "remeasure stop times")
@@ -166,6 +168,7 @@ func main() {
 	useFrequencyMinimizer := flag.BoolP("minimize-stoptimes", "T", false, "search for frequency patterns in explicit trips and combine them, using a CAP approach")
 	useCalDatesRemover := flag.BoolP("remove-cal-dates", "", false, "don't use calendar_dates.txt")
 	explicitCals := flag.BoolP("explicit-calendar", "", false, "add calendar.txt entry for every service, even irregular ones")
+	ensureTripHeadsigns := flag.BoolP("ensure-trip-headsigns", "", false, "write trip headsigns if missing")
 	ensureParents := flag.BoolP("ensure-stop-parents", "", false, "ensure that every stop (location_type=0) has a parent station")
 	keepColOrder := flag.BoolP("keep-col-order", "", false, "keep the original column ordering of the input feed")
 	keepFields := flag.BoolP("keep-additional-fields", "F", false, "keep all non-GTFS fields from the input")
@@ -298,7 +301,9 @@ func main() {
 		*useRedAgencyMinimizer = true
 		*useRedStopMinimizer = true
 		*useRedRouteMinimizer = true
-		*useOrphanDeleter = true
+		if len(*orphanDeleters) == 0 {
+			*orphanDeleters = []string{"all"}
+		}
 	}
 
 	if *minimizeShortHand {
@@ -310,7 +315,9 @@ func main() {
 	}
 
 	if *compressShortHand {
-		*useOrphanDeleter = true
+		if len(*orphanDeleters) == 0 {
+			*orphanDeleters = []string{"all"}
+		}
 		*useShapeMinimizer = true
 		*useRedShapeRemover = true
 		*useRedRouteMinimizer = true
@@ -319,6 +326,12 @@ func main() {
 		*useServiceMinimizer = true
 		*useRedTripMinimizer = true
 		*useRedAgencyMinimizer = true
+	}
+
+	or, err := processors.MakeOrphanRemover(*orphanDeleters)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error parsing filter: %s\n", err)
+		os.Exit(1)
 	}
 
 	for _, polyFile := range polygonFiles {
@@ -542,8 +555,8 @@ func main() {
 			minzers = append(minzers, processors.CompleteTripsGeoFilter{Polygons: polys})
 		}
 
-		if *useOrphanDeleter {
-			minzers = append(minzers, processors.OrphanRemover{})
+		if or.Enabled {
+			minzers = append(minzers, or)
 		}
 
 		if *useRedAgencyMinimizer {
@@ -606,8 +619,8 @@ func main() {
 			}
 
 			// may have created route and stop orphans
-			if *useOrphanDeleter {
-				minzers = append(minzers, processors.OrphanRemover{})
+			if or.Enabled {
+				minzers = append(minzers, or)
 			}
 		}
 
@@ -623,8 +636,12 @@ func main() {
 			minzers = append(minzers, processors.ServiceDuplicateRemover{})
 		}
 
-		if *groupAdjEquStops {
-			minzers = append(minzers, processors.AdjacentStopTimeGrouper{})
+		if *groupAdjEquStops || *groupAdjEquStopsAggressive {
+			minzers = append(minzers, processors.AdjacentStopTimeGrouper{*groupAdjEquStopsAggressive})
+		}
+
+		if *ensureTripHeadsigns {
+			minzers = append(minzers, processors.TripHeadsigner{})
 		}
 
 		if *useRedTripMinimizer {
@@ -637,8 +654,8 @@ func main() {
 			minzers = append(minzers, processors.TripDuplicateRemover{Fuzzy: *useRedTripMinimizerFuzzyRoute, Aggressive: *redTripMinimizerAggressive, MaxDayDist: 7})
 
 			// may have created route and stop orphans
-			if *useOrphanDeleter {
-				minzers = append(minzers, processors.OrphanRemover{})
+			if or.Enabled {
+				minzers = append(minzers, or)
 			}
 
 			// may have created service duplicates

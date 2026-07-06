@@ -141,6 +141,8 @@ func main() {
 
 	idPrefix := flag.StringP("prefix", "", "", "prefix used before all ids")
 
+	stableTripIds := flag.BoolP("stable-trip-ids", "", false, "try to generate hash-like stable trip IDs")
+
 	keepIds := flag.BoolP("keep-ids", "", false, "preserve station, fare, shape, route, trip, level, agency, pathway, and service IDs")
 	keepStationIds := flag.BoolP("keep-station-ids", "", false, "preserve station IDs")
 	keepStationIFTOPTIds := flag.BoolP("keep-station-ifopt-ids", "", false, "don't remove duplicate stops if they have different IFTOP ids")
@@ -653,7 +655,11 @@ func main() {
 			minzers = append(minzers, processors.TripHeadsigner{})
 		}
 
-		if *useRedTripMinimizer {
+		if *useRedTripMinimizer || *stableTripIds {
+			if *stableTripIds {
+				*redTripMinimizerAggressive = true
+			}
+
 			// to convert calendar_dates based services into regular calendar.txt services
 			// before concatenating equivalent trips
 			if *useServiceMinimizer {
@@ -697,6 +703,10 @@ func main() {
 			minzers = append(minzers, processors.IDMinimizer{Prefix: *idPrefix, Base: 10, KeepStations: *keepStationIds, KeepBlocks: *keepBlockIds, KeepFares: *keepFareIds, KeepShapes: *keepShapeIds, KeepRoutes: *keepRouteIds, KeepTrips: *keepTripIds, KeepLevels: *keepLevelIds, KeepServices: *keepServiceIds, KeepAgencies: *keepAgencyIds, KeepPathways: *keepPathwayIds, KeepAttributions: *keepAttributionIds})
 		} else if *useIDMinimizerChar {
 			minzers = append(minzers, processors.IDMinimizer{Prefix: *idPrefix, Base: 36, KeepStations: *keepStationIds, KeepBlocks: *keepBlockIds, KeepFares: *keepFareIds, KeepShapes: *keepShapeIds, KeepRoutes: *keepRouteIds, KeepTrips: *keepTripIds, KeepLevels: *keepLevelIds, KeepServices: *keepServiceIds, KeepAgencies: *keepAgencyIds, KeepPathways: *keepPathwayIds, KeepAttributions: *keepAttributionIds})
+		}
+
+		if *stableTripIds {
+			minzers = append(minzers, processors.TripIDStabilizer{})
 		}
 
 		// do processing

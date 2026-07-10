@@ -33,7 +33,7 @@ func (minimizer TripIDStabilizer) Run(feed *gtfsparser.Feed) {
 		var idCount int = 1
 		for _, ok := newMap[newId]; ok; _, ok = newMap[newId] {
 			fmt.Fprintf(os.Stdout, "Collision on trip id '%s'!\n", newId)
-			newId = tripHash(t, "#" + strconv.Itoa(idCount) + "-")
+			newId = tripHash(t, "#"+strconv.Itoa(idCount)+"-")
 			idCount += 1
 		}
 
@@ -58,13 +58,21 @@ func (minimizer TripIDStabilizer) Run(feed *gtfsparser.Feed) {
 func tripHash(t *gtfs.Trip, prefix string) string {
 	hasher := sha256.New()
 
-	// route name part
+	// route part
 	routeName := t.Route.Short_name
 	if len(routeName) == 0 {
 		routeName = t.Route.Long_name
 	}
 	if len(routeName) == 0 {
 		routeName = *t.Short_name
+	}
+	if len(t.Route.Desc) != 0 {
+		hasher.Write([]byte(t.Route.Desc))
+	}
+
+	// agency part
+	if len(t.Route.Agency.Name) != 0 {
+		hasher.Write([]byte(t.Route.Agency.Name))
 	}
 
 	hasher.Write([]byte(routeName))

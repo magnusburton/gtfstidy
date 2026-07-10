@@ -52,6 +52,8 @@ func (minimizer TripIDStabilizer) Run(feed *gtfsparser.Feed) {
 		}
 	}
 
+	feed.Trips = newMap
+
 	fmt.Fprintf(os.Stdout, "done.\n")
 }
 

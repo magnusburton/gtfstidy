@@ -102,7 +102,12 @@ func (m TripDuplicateRemover) Run(feed *gtfsparser.Feed) {
 	}
 
 	for i := 1; i <= m.MaxDayDist; i++ {
-		for m.combineAllAdjTrips(feed, uint64(i), m.Aggressive) {
+		for m.combineAllAdjTrips(feed, uint64(i), false) {
+		}
+	}
+
+	if (m.Aggressive) {
+		for m.combineAllAdjTrips(feed, 0, true) {
 		}
 	}
 
@@ -511,10 +516,7 @@ func (m *TripDuplicateRemover) tripCalContained(child *gtfs.Trip, parent *gtfs.T
 }
 
 // Check if trip child is adjacent to trip parent calendar-wise
-func (m *TripDuplicateRemover) tripCalAdj(child *gtfs.Trip, parent *gtfs.Trip, maxdist uint64, aggressive bool) bool {
-	if aggressive {
-		return true
-	}
+func (m *TripDuplicateRemover) tripCalAdj(child *gtfs.Trip, parent *gtfs.Trip, maxdist uint64) bool {
 	// only merge if daymap is equal, to avoid creating complicated services
 	if !(!child.Service.Start_date().IsEmpty() && !parent.Service.Start_date().IsEmpty() && child.Service.RawDaymap() == parent.Service.RawDaymap()) {
 		return false
@@ -639,6 +641,9 @@ func (m *TripDuplicateRemover) combineServices(services []*gtfs.Service, ref *gt
 	if !ref.Start_date().IsEmpty() {
 		// extend range and delete wrong dates
 		for _, s := range services {
+			if len(m.serviceList[s]) == 0 {
+				continue
+			}
 			first := m.getDateFromRefDay(m.serviceList[s][0])
 			last := m.getDateFromRefDay(m.serviceList[s][len(m.serviceList[s])-1])
 
@@ -917,7 +922,7 @@ func (m *TripDuplicateRemover) combineAllAdjTrips(feed *gtfsparser.Feed, maxDist
 						}
 
 						if m.tripAttrEq(ta, tb, feed) && m.tripStEq(ta, tb) {
-							if m.tripCalAdj(tb, ta, maxDist, aggressive) {
+							if aggressive || m.tripCalAdj(tb, ta, maxDist) {
 								if !written {
 									rets[j] = append(rets[j], make([]*gtfs.Trip, 0))
 									rets[j][len(rets[j])-1] = append(rets[j][len(rets[j])-1], ta)

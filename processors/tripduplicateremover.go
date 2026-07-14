@@ -115,8 +115,8 @@ func (m TripDuplicateRemover) Run(feed *gtfsparser.Feed) {
 	feed.CleanTransfers()
 
 	fmt.Fprintf(os.Stdout, "done. (-%d trips [-%.2f%%])\n",
-	(bef - len(feed.Trips)),
-	100.0*float64(bef-len(feed.Trips))/(float64(bef)+0.001))
+		(bef - len(feed.Trips)),
+		100.0*float64(bef-len(feed.Trips))/(float64(bef)+0.001))
 }
 
 func (m *TripDuplicateRemover) getParent(stop *gtfs.Stop) *gtfs.Stop {
@@ -440,10 +440,10 @@ func (m *TripDuplicateRemover) tripAttrEq(a *gtfs.Trip, b *gtfs.Trip, feed *gtfs
 	}
 
 	return addFldsEq && a.Wheelchair_accessible == b.Wheelchair_accessible &&
-	a.Bikes_allowed == b.Bikes_allowed &&
-	(a.Short_name == b.Short_name || (a.Short_name != nil && b.Short_name != nil && *a.Short_name == *b.Short_name)) &&
-	(a.Headsign == b.Headsign || (m.Fuzzy && (a.Headsign == nil || b.Headsign == nil)) || (a.Headsign != nil && b.Headsign != nil && *a.Headsign == *b.Headsign || (m.Fuzzy && (strings.Contains(*b.Headsign, *a.Headsign) || strings.Contains(*a.Headsign, *b.Headsign))))) &&
-	(a.Block_id == b.Block_id || (a.Block_id != nil && b.Block_id != nil && *a.Block_id == *b.Block_id))
+		a.Bikes_allowed == b.Bikes_allowed &&
+		(a.Short_name == b.Short_name || (a.Short_name != nil && b.Short_name != nil && *a.Short_name == *b.Short_name)) &&
+		(a.Headsign == b.Headsign || (m.Fuzzy && (a.Headsign == nil || b.Headsign == nil)) || (a.Headsign != nil && b.Headsign != nil && *a.Headsign == *b.Headsign || (m.Fuzzy && (strings.Contains(*b.Headsign, *a.Headsign) || strings.Contains(*a.Headsign, *b.Headsign))))) &&
+		(a.Block_id == b.Block_id || (a.Block_id != nil && b.Block_id != nil && *a.Block_id == *b.Block_id))
 }
 
 // Check if trip child is equivalent to trip parent calendar-wise
@@ -854,7 +854,6 @@ func (m *TripDuplicateRemover) combineAllOverlapTrips(feed *gtfsparser.Feed) boo
 						if _, ok := processed[tb]; ok {
 							continue
 						}
-
 
 						if m.tripAttrEq(ta, tb, feed) && m.tripStEq(ta, tb) {
 							overlaps := m.tripCalOverlap(tb, ta)

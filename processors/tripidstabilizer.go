@@ -92,6 +92,13 @@ func tripHash(t *gtfs.Trip, prefix string) string {
 
 	// headsign
 	hasher.Write([]byte(*t.Headsign))
+	hasher.Write([]byte(strconv.Itoa(int(t.Wheelchair_accessible))))
+	hasher.Write([]byte(strconv.Itoa(int(t.Bikes_allowed))))
+
+	first := t.Service.GetFirstActiveDate()
+	hasher.Write([]byte(strconv.Itoa(int(first.Year()))))
+	hasher.Write([]byte(strconv.Itoa(int(first.Month()))))
+	hasher.Write([]byte(strconv.Itoa(int(first.Day()))))
 
 	newId := ""
 

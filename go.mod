@@ -1,4 +1,4 @@
-module github.com/patrickbr/gtfstidy
+module github.com/magnusburton/gtfstidy
 
 go 1.18
 
